@@ -6,6 +6,7 @@ import { Login } from './pages/Login'
 import { Profile } from './pages/Profile'
 import { Dashboard } from './pages/Dashboard'
 import { CareerCoach } from './pages/CareerCoach'
+import { CareerCoachConversation } from './pages/CareerCoachConversation'
 import searchlineLogo from './assets/searchline-logo.jpg'
 
 function Home() {
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/career-coach" element={<CareerCoach />} />
+        <Route path="/career-coach/conversation" element={<CareerCoachConversation />} />
         <Route
           path="*"
           element={
