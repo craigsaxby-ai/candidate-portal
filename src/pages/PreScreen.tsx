@@ -319,35 +319,38 @@ export function PreScreen() {
       <PageShell centred>
         <div className="w-full max-w-[640px] mx-auto px-6 py-12 flex flex-col items-center gap-8 text-center">
           {/* Success icon */}
-          <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
-            <span className="text-green-400"><IconCheckCircle size={40} /></span>
+          <div className="w-20 h-20 rounded-full bg-green-500/15 border-2 border-green-500/30 flex items-center justify-center">
+            <span className="text-green-400"><IconCheckCircle size={44} /></span>
           </div>
 
           {/* Confirmation */}
           <div className="space-y-3">
-            <h1 className="text-white text-2xl font-bold">Thank you, {firstName}</h1>
+            <h1 className="text-white text-2xl font-bold">Thank you, {firstName}!</h1>
             <p className="text-gray-400 text-sm leading-relaxed max-w-sm mx-auto">
-              Your responses have been submitted. Our team will review your pre-screen and be in touch with next steps.
+              Your pre-screen is complete. Our team will review your responses and be in touch with next steps.
             </p>
           </div>
 
           <div className="w-full border-t border-[#233D4C]" />
 
-          {/* CTA */}
-          <div className="w-full space-y-4">
-            <p className="text-white text-base font-medium">
-              Want to increase your chances of landing your next role?
+          {/* Profile CTA card */}
+          <div className="w-full border border-[#FD802E]/40 bg-[#1a3347] rounded-2xl p-6 space-y-4 text-center">
+            <p className="text-white text-base font-semibold">
+              Want to increase your chances?
+            </p>
+            <p className="text-gray-400 text-sm leading-relaxed max-w-xs mx-auto">
+              Candidates with a complete Searchline profile are <span className="text-white font-semibold">8×</span> more likely to be matched to relevant opportunities.
             </p>
             <a
-              href="/signup"
-              className="block w-full py-3.5 bg-[#FD802E] hover:bg-[#ff8f45] text-[#02182B] font-bold text-sm rounded-xl transition-colors text-center"
+              href="https://searchline.io/signup"
+              className="block w-full py-3.5 bg-[#FD802E] hover:bg-[#ff8f45] text-white font-bold text-sm rounded-xl transition-colors text-center"
             >
               Create your Searchline profile →
             </a>
-            <p className="text-gray-500 text-xs leading-relaxed">
-              Candidates with a complete profile are 8× more likely to be matched to relevant opportunities.
-            </p>
           </div>
+
+          {/* Powered by footer */}
+          <p className="text-gray-600 text-xs">Powered by Searchline AI</p>
         </div>
       </PageShell>
     )
