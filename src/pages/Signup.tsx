@@ -82,7 +82,13 @@ export function Signup() {
               <span className="text-white font-medium">{email}</span>. Click it
               to activate your account.
             </p>
-            <p className="text-gray-500 text-xs pt-2">
+            <p className="text-gray-400 text-sm pt-2">
+              Once confirmed,{' '}
+              <Link to="/profile" className="text-[#FD802E] hover:underline font-medium">
+                build your profile →
+              </Link>
+            </p>
+            <p className="text-gray-500 text-xs">
               Already confirmed?{' '}
               <Link to="/login" className="text-[#FD802E] hover:underline">
                 Sign in →

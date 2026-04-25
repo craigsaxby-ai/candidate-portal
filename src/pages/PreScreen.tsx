@@ -8,7 +8,8 @@
  */
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
+import { EricaCircle } from '../components/EricaCircle'
 
 const API_BASE = import.meta.env.VITE_ENGINE_API_BASE_URL ?? ''
 
@@ -147,70 +148,6 @@ function Wordmark({ size = 'md', centred = false }: { size?: 'sm' | 'md' | 'lg';
   )
 }
 
-// ── Erica animated waveform circle ───────────────────────────────────────────
-
-function EricaCircle({ isActive = false }: { isActive?: boolean }) {
-  const barConfigs = [
-    { keyframe: 'cp-bar-1', delay: '0s',    minH: 5,  maxH: 22 },
-    { keyframe: 'cp-bar-2', delay: '0.1s',  minH: 8,  maxH: 28 },
-    { keyframe: 'cp-bar-3', delay: '0.05s', minH: 6,  maxH: 32 },
-    { keyframe: 'cp-bar-4', delay: '0.15s', minH: 8,  maxH: 24 },
-    { keyframe: 'cp-bar-5', delay: '0.08s', minH: 5,  maxH: 18 },
-  ]
-
-  const barStyle = (cfg: typeof barConfigs[0], index: number): React.CSSProperties =>
-    isActive
-      ? {
-          animationName:            cfg.keyframe,
-          animationDuration:        ['0.8s','0.6s','0.7s','0.9s','0.75s'][index],
-          animationTimingFunction:  'ease-in-out',
-          animationIterationCount:  'infinite',
-          animationDelay:           cfg.delay,
-          height:                   `${cfg.minH}px`,
-        }
-      : { height: `${cfg.minH}px` }
-
-  return (
-    <>
-      <style>{`
-        @keyframes cp-bar-1 { 0%,100% { height: 5px; }  50% { height: 22px; } }
-        @keyframes cp-bar-2 { 0%,100% { height: 8px; }  50% { height: 28px; } }
-        @keyframes cp-bar-3 { 0%,100% { height: 6px; }  50% { height: 32px; } }
-        @keyframes cp-bar-4 { 0%,100% { height: 8px; }  50% { height: 24px; } }
-        @keyframes cp-bar-5 { 0%,100% { height: 5px; }  50% { height: 18px; } }
-      `}</style>
-      <div className="relative flex items-center justify-center w-32 h-32">
-        {/* Outer ring */}
-        <div className={`absolute inset-0 rounded-full border-4 animate-pulse transition-all duration-700 ${
-          isActive
-            ? 'bg-[#FD802E]/30 border-[#FD802E]/70 shadow-[0_0_32px_rgba(253,128,46,0.45)]'
-            : 'bg-[#FD802E]/15 border-[#FD802E]/30'
-        }`} />
-        {/* Middle ring */}
-        <div className={`absolute w-24 h-24 rounded-full border-2 transition-all duration-700 ${
-          isActive
-            ? 'bg-[#FD802E]/40 border-[#FD802E]/80'
-            : 'bg-[#FD802E]/20 border-[#FD802E]/50'
-        }`} />
-        {/* Inner circle with waveform bars */}
-        <div className={`relative w-16 h-16 rounded-full flex items-end justify-center pb-3 transition-all duration-700 ${
-          isActive ? 'bg-[#FD802E]' : 'bg-[#FD802E]/75'
-        }`}>
-          <div className="flex items-end gap-[3px]">
-            {barConfigs.map((cfg, i) => (
-              <div
-                key={i}
-                className="w-[5px] rounded-full bg-white transition-all"
-                style={barStyle(cfg, i)}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    </>
-  )
-}
-
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function PreScreen() {
@@ -341,12 +278,12 @@ export function PreScreen() {
             <p className="text-gray-400 text-sm leading-relaxed max-w-xs mx-auto">
               Candidates with a complete Searchline profile are <span className="text-white font-semibold">8×</span> more likely to be matched to relevant opportunities.
             </p>
-            <a
-              href="https://searchline.io/signup"
+            <Link
+              to="/signup"
               className="block w-full py-3.5 bg-[#FD802E] hover:bg-[#ff8f45] text-white font-bold text-sm rounded-xl transition-colors text-center"
             >
               Create your Searchline profile →
-            </a>
+            </Link>
           </div>
 
           {/* Powered by footer */}
