@@ -17,7 +17,6 @@ export function EricaCircle({ isActive = false, size = 'lg' }: EricaCircleProps)
   const midSize    = size === 'sm' ? 'w-12 h-12' : size === 'md' ? 'w-18 h-18' : 'w-24 h-24'
   const innerSize  = size === 'sm' ? 'w-8 h-8'   : size === 'md' ? 'w-12 h-12' : 'w-16 h-16'
   const barWidth   = size === 'sm' ? 'w-[3px]'   : size === 'md' ? 'w-[4px]'   : 'w-[5px]'
-  const barPb      = size === 'sm' ? 'pb-1.5'    : size === 'md' ? 'pb-2'      : 'pb-3'
 
   const barConfigs = [
     { keyframe: 'ec-bar-1', delay: '0s',    minH: 5,  maxH: 22 },
@@ -62,14 +61,14 @@ export function EricaCircle({ isActive = false, size = 'lg' }: EricaCircleProps)
             : 'bg-[#FD802E]/20 border-[#FD802E]/50'
         }`} />
         {/* Inner circle with waveform bars */}
-        <div className={`relative ${innerSize} rounded-full flex items-end justify-center ${barPb} transition-all duration-700 ${
-          isActive ? 'bg-[#FD802E]' : 'bg-[#FD802E]/75'
+        <div className={`relative ${innerSize} rounded-full flex items-center justify-center transition-all duration-700 ${
+          isActive ? 'bg-[#02182B]' : 'bg-[#02182B]'
         }`}>
-          <div className="flex items-end gap-[3px]">
+          <div className="flex items-center gap-[3px]">
             {barConfigs.map((cfg, i) => (
               <div
                 key={i}
-                className={`${barWidth} rounded-full bg-white transition-all`}
+                className={`${barWidth} rounded-full bg-[#FD802E] transition-all`}
                 style={barStyle(cfg, i)}
               />
             ))}
