@@ -1,10 +1,10 @@
 import { Routes, Route } from 'react-router-dom'
-import { Link } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { PreScreen } from './pages/PreScreen'
 import { Signup } from './pages/Signup'
 import { Login } from './pages/Login'
 import { Profile } from './pages/Profile'
+import { Dashboard } from './pages/Dashboard'
 import searchlineLogo from './assets/searchline-logo.jpg'
 
 function Home() {
@@ -29,20 +29,7 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route path="/profile" element={<Profile />} />
-        <Route
-          path="/dashboard"
-          element={
-            <div className="min-h-screen bg-[#02182B] flex flex-col items-center justify-center gap-6 text-white">
-              <p className="text-gray-400 text-sm">Dashboard — coming soon</p>
-              <Link
-                to="/profile"
-                className="px-5 py-2.5 bg-[#FD802E] hover:bg-[#ff8f45] text-white font-semibold text-sm rounded-xl transition-colors"
-              >
-                Build your profile →
-              </Link>
-            </div>
-          }
-        />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route
           path="*"
           element={
