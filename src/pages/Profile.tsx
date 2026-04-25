@@ -251,38 +251,108 @@ export function Profile() {
 
   // ── Saved / done state ───────────────────────────────────────────────────
   if (saved) {
+    // Compute missing fields for the completion prompt
+    const missingItems = [
+      { field: 'currentRole',   label: 'Add your current job title',    benefit: 'Helps Erica understand your background' },
+      { field: 'currentSalary', label: 'Add your current salary',       benefit: 'Ensures you only see relevant opportunities' },
+      { field: 'minSalary',     label: 'Add your salary expectations',  benefit: 'Filters out roles that don\'t meet your requirements' },
+      { field: 'linkedIn',      label: 'Add your LinkedIn profile',     benefit: 'Gives recruiters more context about your experience' },
+      { field: 'bio',           label: 'Write a short bio',             benefit: 'Makes your profile stand out to recruiters' },
+      { field: 'idealNextRole', label: 'Describe your ideal next role', benefit: 'Erica uses this to match you to the right searches' },
+      { field: 'cvFileName',    label: 'Upload your CV',                benefit: 'Required by most recruiters before shortlisting' },
+    ].filter((item) => !form[item.field as keyof typeof form])
+
     return (
       <div className="min-h-screen bg-[#02182B] flex flex-col">
         <Header />
-        <main className="flex-1 flex items-center justify-center px-4 py-16">
-          <div className="w-full max-w-md text-center space-y-8">
-            {/* Success icon */}
-            <div className="w-20 h-20 rounded-full bg-green-500/15 border-2 border-green-500/30 flex items-center justify-center mx-auto">
-              <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <path d="m9 11 3 3L22 4"/>
-              </svg>
-            </div>
+        <main className="flex-1 px-4 py-12">
+          <div className="w-full max-w-md mx-auto space-y-6">
 
-            <div className="space-y-2">
-              <h1 className="text-white text-2xl font-bold">Profile saved!</h1>
-              <p className="text-gray-400 text-sm">{progress}% complete</p>
+            {/* Success icon + heading */}
+            <div className="text-center space-y-4">
+              <div className="w-20 h-20 rounded-full bg-green-500/15 border-2 border-green-500/30 flex items-center justify-center mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <path d="m9 11 3 3L22 4"/>
+                </svg>
+              </div>
+              <div className="space-y-1">
+                <h1 className="text-white text-2xl font-bold">Profile saved!</h1>
+                <p className="text-gray-400 text-sm">{progress}% complete</p>
+              </div>
             </div>
 
             {/* Erica completion card */}
             <div className="bg-[#233D4C] border border-[#FD802E]/30 rounded-2xl p-6 flex flex-col items-center gap-4">
               <EricaCircle isActive={false} size="sm" />
-              <p className="text-white text-sm leading-relaxed">
+              <p className="text-white text-sm leading-relaxed text-center">
                 Thanks {firstName} — I've got everything I need. I'll reach out when a search matches what you're looking for. In the meantime, your profile is live and being reviewed.
               </p>
             </div>
 
-            <button
-              onClick={() => setSaved(false)}
-              className="text-[#FD802E] text-sm hover:underline"
-            >
-              ← Edit profile
-            </button>
+            {/* Missing fields card — only shown if profile < 100% */}
+            {progress < 100 ? (
+              <div className="bg-[#233D4C] rounded-2xl p-5 space-y-4">
+                <h2 className="text-white font-semibold text-sm">Complete your profile to get matched faster</h2>
+                <div className="space-y-3">
+                  {missingItems.map((item) => (
+                    <div key={item.field} className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        {/* Orange dot */}
+                        <span className="mt-1.5 flex-shrink-0 w-2 h-2 rounded-full bg-[#FD802E]" />
+                        <div className="min-w-0">
+                          <p className="text-white text-sm font-semibold leading-snug">{item.label}</p>
+                          <p className="text-gray-500 text-xs mt-0.5 leading-snug">{item.benefit}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSaved(false)}
+                        className="flex-shrink-0 text-[#FD802E] text-sm font-medium hover:underline whitespace-nowrap"
+                      >
+                        Add →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-2xl px-5 py-4 flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400 flex-shrink-0">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <path d="m9 11 3 3L22 4"/>
+                </svg>
+                <p className="text-green-400 text-sm font-semibold">Your profile is complete! ✓</p>
+              </div>
+            )}
+
+            {/* Why complete matters — always shown */}
+            <div className="bg-[#0d2535] border border-[#2a4a5c] rounded-2xl p-5 space-y-3">
+              <p className="text-white font-semibold text-sm">🎯 Why complete matters</p>
+              <ul className="space-y-2">
+                {[
+                  '8x more likely to be matched to relevant searches',
+                  'Recruiters can shortlist you faster',
+                  'Erica can pre-screen you for more roles',
+                ].map((point) => (
+                  <li key={point} className="flex items-start gap-2">
+                    <span className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#FD802E]" />
+                    <span className="text-gray-300 text-sm leading-snug">{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Edit profile link */}
+            <div className="text-center pb-4">
+              <button
+                onClick={() => setSaved(false)}
+                className="text-[#FD802E] text-sm hover:underline"
+              >
+                ← Edit profile
+              </button>
+            </div>
+
           </div>
         </main>
       </div>
