@@ -12,7 +12,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { EricaCircle } from '../components/EricaCircle'
 import { EricaIntake } from '../components/EricaIntake'
@@ -157,6 +157,7 @@ function YesNoToggle({ value, onChange }: { value: boolean; onChange: (v: boolea
 
 export function Profile() {
   const { user, loading: authLoading } = useAuth()
+  const navigate = useNavigate()
 
   const fullName = (user?.user_metadata?.full_name as string | undefined) ?? ''
   const email    = user?.email ?? ''
@@ -376,7 +377,7 @@ export function Profile() {
               </p>
             </div>
             <button
-              onClick={() => setShowErica(true)}
+              onClick={() => navigate('/career-coach')}
               className="flex items-center gap-2 px-4 py-2.5 border border-[#FD802E]/50 bg-[#FD802E]/10 hover:bg-[#FD802E]/20 text-[#FD802E] text-sm font-semibold rounded-xl transition-colors whitespace-nowrap"
             >
               <EricaCircle isActive={false} size="sm" />
