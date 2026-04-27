@@ -15,9 +15,10 @@
  * No backend calls — local state + mock data only. Supabase migration pending.
  */
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 import { EricaCircle } from '../components/EricaCircle'
 import searchlineLogo from '../assets/searchline-logo.jpg'
 
@@ -144,28 +145,44 @@ function Header({ firstName, onSignOut }: { firstName: string; onSignOut: () => 
 // ── Welcome card ──────────────────────────────────────────────────────────────
 
 function WelcomeCard({
-  firstName,
-  profileComplete,
+  displayName,
+  profileCompletePct,
+  careerCoachCompleted,
 }: {
-  firstName: string
-  profileComplete: boolean
+  displayName: string
+  profileCompletePct: number
+  careerCoachCompleted: boolean
 }) {
+  const pct = Math.min(100, Math.max(0, profileCompletePct))
+  const profileComplete = pct >= 100
+
   return (
     <div className="bg-[#233D4C] rounded-2xl p-5 flex items-center justify-between gap-4">
       <div className="flex-1 min-w-0">
         <h1 className="text-white text-xl font-bold truncate">
-          Welcome back, {firstName} 👋
+          Welcome back, {displayName} 👋
         </h1>
 
-        {profileComplete ? (
+        {careerCoachCompleted ? (
+          <p className="text-green-400 text-sm mt-1.5 font-semibold">
+            Career Coach complete ✓
+          </p>
+        ) : profileComplete ? (
           <p className="text-gray-300 text-sm mt-1.5 leading-relaxed">
             Your profile is active and being reviewed by our team.
           </p>
         ) : (
           <div className="mt-2 space-y-2.5">
             <p className="text-gray-300 text-sm leading-relaxed">
-              Your profile is incomplete — complete it to improve your match rate.
+              Your profile is {pct}% complete — finish it to improve your match rate.
             </p>
+            {/* Progress bar */}
+            <div className="w-full bg-[#02182B] rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-[#FD802E] h-2 rounded-full transition-all"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
             <Link
               to="/profile"
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FD802E] hover:bg-[#ff8f45] text-white font-semibold text-sm rounded-xl transition-colors"
@@ -410,9 +427,19 @@ function Footer() {
 
 // ── Dashboard (main export) ───────────────────────────────────────────────────
 
+// ─── Candidate profile row from Supabase ─────────────────────────────────────
+
+interface CandidateProfile {
+  profile_complete_pct:    number | null
+  career_coach_completed:  boolean | null
+  is_open_to_opportunities: string | null
+  full_name:               string | null
+}
+
 export function Dashboard() {
   const { user, loading, signOut } = useAuth()
   const navigate = useNavigate()
+  const [profile, setProfile] = useState<CandidateProfile | null>(null)
 
   // Auth guard
   useEffect(() => {
@@ -421,20 +448,38 @@ export function Dashboard() {
     }
   }, [loading, user, navigate])
 
+  // Fetch real profile data from Supabase
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('candidate_profiles')
+      .select('profile_complete_pct, career_coach_completed, is_open_to_opportunities, full_name')
+      .eq('user_id', user.id)
+      .single()
+      .then(({ data }: { data: unknown }) => {
+        if (data) setProfile(data as CandidateProfile)
+      }, () => { /* no profile yet — fall back to defaults */ })
+  }, [user])
+
   if (loading) return <Spinner />
   if (!user) return null // redirecting
 
-  // Derive display values
-  const fullName: string =
-    (user.user_metadata?.full_name as string | undefined) ?? ''
-  const firstName = fullName.split(' ')[0] || user.email?.split('@')[0] || 'there'
+  // Derive display values — prefer profile full_name, then auth metadata
+  const metaFullName: string = (user.user_metadata?.full_name as string | undefined) ?? ''
+  const displayName =
+    (profile?.full_name ?? metaFullName).split(' ')[0] ||
+    user.email?.split('@')[0] ||
+    'there'
 
-  // Profile completeness — stub until Supabase migration lands
-  // For now: always incomplete (no profile data in DB yet)
-  const profileComplete = false
+  const profileCompletePct    = profile?.profile_complete_pct    ?? 0
+  const careerCoachCompleted  = profile?.career_coach_completed  ?? false
 
-  // Looking status — stub, defaults to 'open' until stored in Supabase
-  const lookingStatus: LookingStatus = 'open'
+  // Map is_open_to_opportunities → LookingStatus
+  const rawOpportunities = profile?.is_open_to_opportunities
+  const lookingStatus: LookingStatus =
+    rawOpportunities === 'actively' ? 'actively' :
+    rawOpportunities === 'not'      ? 'not' :
+    'open'
 
   const handleSignOut = async () => {
     await signOut()
@@ -443,11 +488,15 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#02182B] flex flex-col">
-      <Header firstName={firstName} onSignOut={handleSignOut} />
+      <Header firstName={displayName} onSignOut={handleSignOut} />
 
       <main className="flex-1 px-4 py-6">
         <div className="w-full max-w-xl mx-auto space-y-6">
-          <WelcomeCard firstName={firstName} profileComplete={profileComplete} />
+          <WelcomeCard
+            displayName={displayName}
+            profileCompletePct={profileCompletePct}
+            careerCoachCompleted={careerCoachCompleted}
+          />
           <ApplicationsSection />
           <OpportunitiesCard lookingStatus={lookingStatus} />
           <QuickLinks />
