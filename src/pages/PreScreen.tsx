@@ -14,14 +14,15 @@ import { EricaCircle } from '../components/EricaCircle'
 const API_BASE = import.meta.env.VITE_ENGINE_API_BASE_URL ?? ''
 
 interface TokenPayload {
-  candidateId:   string
-  projectId:     string
-  candidateName: string
-  questions:     string[]
-  projectTitle?: string
-  roleTitle?:    string
-  companyName?:  string
-  clientName?:   string
+  candidateId:            string
+  projectId:              string
+  candidateName:          string
+  questions:              string[]
+  projectTitle?:          string
+  roleTitle?:             string
+  companyName?:           string
+  clientName?:            string
+  hasCompletedCareerCoach?: boolean
 }
 
 // ── Inline SVG icons (no lucide-react dependency) ─────────────────────────────
@@ -165,6 +166,9 @@ export function PreScreen() {
   const [done,              setDone]              = useState(false)
   const [error,             setError]             = useState<string | null>(null)
 
+  // Express Interest mode (hasCompletedCareerCoach = true)
+  const [expressResult,     setExpressResult]     = useState<'accepted' | 'declined' | null>(null)
+
   // ── Load token → questions ────────────────────────────────────────────────
   useEffect(() => {
     if (!token) { setInvalid(true); setLoading(false); return }
@@ -185,6 +189,31 @@ export function PreScreen() {
       setShowIntro(false)
       setTimeout(() => setQuestionsOpacity(true), 50)
     }, 500)
+  }
+
+  // ── Express Interest submit ───────────────────────────────────────────────
+  const handleExpressInterest = async (answer: 'yes' | 'no') => {
+    if (!token) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      const res = await fetch(`${API_BASE}/api/prescreen/${token}/submit`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ responses: [{ question: 'express_interest', answer }] }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setError((body as { error?: string }).error ?? 'Submission failed. Please try again.')
+        setSubmitting(false)
+        return
+      }
+      setExpressResult(answer === 'yes' ? 'accepted' : 'declined')
+    } catch {
+      setError('Network error — please check your connection and try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -249,6 +278,110 @@ export function PreScreen() {
   const firstName    = payload.candidateName.split(' ')[0]
   const roleLabel    = payload.roleTitle    ?? payload.projectTitle ?? 'this role'
   const companyLabel = payload.companyName  ?? payload.clientName   ?? 'the hiring team'
+
+  // ── Express Interest — accepted ───────────────────────────────────────────
+  if (payload.hasCompletedCareerCoach && expressResult === 'accepted') {
+    return (
+      <PageShell centred>
+        <div className="w-full max-w-[480px] mx-auto px-6 py-12 flex flex-col items-center gap-8 text-center">
+          <div className="w-20 h-20 rounded-full bg-green-500/15 border-2 border-green-500/30 flex items-center justify-center">
+            <span className="text-green-400"><IconCheckCircle size={44} /></span>
+          </div>
+          <div className="space-y-3">
+            <h1 className="text-white text-2xl font-bold">Brilliant — you're in the running.</h1>
+            <p className="text-gray-400 text-sm leading-relaxed max-w-sm mx-auto">
+              We'll be in touch with next steps. In the meantime your profile remains active.
+            </p>
+          </div>
+          <p className="text-gray-600 text-xs">Powered by Searchline AI</p>
+        </div>
+      </PageShell>
+    )
+  }
+
+  // ── Express Interest — declined ───────────────────────────────────────────
+  if (payload.hasCompletedCareerCoach && expressResult === 'declined') {
+    return (
+      <PageShell centred>
+        <div className="w-full max-w-[480px] mx-auto px-6 py-12 flex flex-col items-center gap-8 text-center">
+          <div className="w-20 h-20 rounded-full bg-[#233D4C] border-2 border-[#2a4a5c] flex items-center justify-center">
+            <span className="text-gray-400 text-3xl">👋</span>
+          </div>
+          <div className="space-y-3">
+            <h1 className="text-white text-2xl font-bold">No problem at all.</h1>
+            <p className="text-gray-400 text-sm leading-relaxed max-w-sm mx-auto">
+              Your profile stays active and I'll reach out when a better match comes along.
+            </p>
+          </div>
+          <p className="text-gray-600 text-xs">Powered by Searchline AI</p>
+        </div>
+      </PageShell>
+    )
+  }
+
+  // ── Express Interest — main screen ────────────────────────────────────────
+  if (payload.hasCompletedCareerCoach) {
+    return (
+      <PageShell centred>
+        <div className="w-full max-w-[480px] mx-auto px-6 py-10 flex flex-col items-center gap-7">
+          <Wordmark size="lg" centred />
+
+          {/* Erica hero card */}
+          <div className="w-full bg-[#1a3347] rounded-2xl p-8 flex flex-col items-center gap-5 text-center">
+            <EricaCircle isActive={true} size="lg" />
+            <h1 className="text-2xl font-bold text-white">
+              Hi {firstName} — great to hear from you again!
+            </h1>
+          </div>
+
+          {/* Role context pill */}
+          <div className="bg-[#233D4C] border border-[#2a4a5c] text-white text-sm px-4 py-2 rounded-full w-fit text-center">
+            You're being considered for{' '}
+            <span className="font-semibold">{roleLabel}</span>
+            {' '}at{' '}
+            <span className="font-semibold">{companyLabel}</span>
+          </div>
+
+          {/* Erica message */}
+          <div className="w-full bg-[#1a3347] border border-[#2a4a5c] rounded-2xl px-6 py-5">
+            <p className="text-gray-300 text-sm leading-relaxed italic">
+              "Since we've already spoken, I have a good sense of your background. This search looks
+              like a strong match for what you're looking for. Would you like to be put forward?"
+            </p>
+            <p className="mt-3 text-[#FD802E] text-xs font-semibold">— Erica, Searchline AI</p>
+          </div>
+
+          {error && (
+            <p className="text-red-400 text-sm flex items-center gap-2">
+              <span className="flex-shrink-0"><IconAlertCircle size={14} /></span>
+              {error}
+            </p>
+          )}
+
+          {/* CTA buttons */}
+          <div className="w-full flex flex-col gap-3">
+            <button
+              onClick={() => handleExpressInterest('yes')}
+              disabled={submitting}
+              className="w-full py-4 bg-[#FD802E] hover:bg-[#ff8f45] text-white font-bold text-base rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {submitting ? <IconLoaderSm /> : null}
+              Yes, I'm interested →
+            </button>
+            <button
+              onClick={() => handleExpressInterest('no')}
+              disabled={submitting}
+              className="w-full py-4 bg-transparent border border-[#2a4a5c] hover:border-gray-500 text-gray-300 hover:text-white font-medium text-base rounded-xl transition-colors disabled:opacity-50"
+            >
+              Not right now
+            </button>
+          </div>
+
+          <p className="text-gray-600 text-xs text-center">Confidential · For recruitment purposes only</p>
+        </div>
+      </PageShell>
+    )
+  }
 
   // ── Done ──────────────────────────────────────────────────────────────────
   if (done) {

@@ -12,6 +12,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { EricaCircle } from '../components/EricaCircle'
 import searchlineLogo from '../assets/searchline-logo.jpg'
+import { supabase } from '../lib/supabase'
 
 // ── Question config ────────────────────────────────────────────────────────────
 
@@ -243,8 +244,32 @@ export function CareerCoachConversation() {
     })
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     console.log('[CP-11] Career Coach answers:', answers)
+
+    // Persist to Supabase
+    try {
+      await supabase.from('career_conversations').insert({
+        user_id:           user?.id,
+        conversation_type: 'career_coach',
+        questions_asked:   CAREER_COACH_QUESTIONS.map((q) => q.question),
+        responses:         Object.entries(answers).map(([id, answer]) => ({ question_id: id, answer })),
+        completed_at:      new Date().toISOString(),
+      })
+
+      await supabase.from('candidate_profiles').upsert(
+        {
+          user_id:               user?.id,
+          career_coach_completed: true,
+          updated_at:            new Date().toISOString(),
+        },
+        { onConflict: 'user_id' },
+      )
+    } catch (err) {
+      // Non-blocking — log but don't prevent the success state
+      console.error('[CP-13] Supabase persistence error:', err)
+    }
+
     fadeTo(() => setPageState('complete'))
   }
 
