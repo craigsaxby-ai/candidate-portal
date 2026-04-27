@@ -17,6 +17,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { EricaCircle } from '../components/EricaCircle'
 import { EricaIntake } from '../components/EricaIntake'
 import type { ParsedProfile } from '../components/EricaIntake'
+import { supabase } from '../lib/supabase'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -215,9 +216,42 @@ export function Profile() {
     if (file) update('cvFileName', file.name)
   }
 
-  const handleSave = () => {
-    // No backend yet — just show success state
+  const handleSave = async () => {
     setSaved(true)
+    // Persist to Supabase — non-blocking, errors are logged but don't break UX
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (authUser) {
+        const { error } = await supabase.from('candidate_profiles').upsert({
+          user_id: authUser.id,
+          full_name: form.fullName,
+          email: authUser.email,
+          job_title: form.currentRole,
+          company_name: form.currentCompany,
+          years_experience: form.yearsExperience,
+          location: form.location,
+          open_to_relocation: form.openToRelocation,
+          notice_period: form.noticePeriod,
+          target_roles: form.targetRoles,
+          ideal_next_role: form.idealNextRole,
+          salary_min: form.minSalary,
+          salary_max: form.maxSalary,
+          current_salary: form.currentSalary,
+          current_package: form.currentPackage,
+          linkedin_url: form.linkedIn,
+          bio: form.bio,
+          skills: form.skills,
+          qualifications: form.qualifications,
+          is_open_to_opportunities: form.lookingStatus,
+          profile_complete_pct: progress,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' })
+        if (error) console.error('[profile] Supabase save error:', error)
+        else console.log('[profile] Profile saved to Supabase')
+      }
+    } catch (err) {
+      console.error('[profile] Supabase save exception:', err)
+    }
   }
 
   // ── Auth loading ─────────────────────────────────────────────────────────
