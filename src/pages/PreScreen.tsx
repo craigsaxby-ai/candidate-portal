@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { EricaCircle } from '../components/EricaCircle'
 
 const API_BASE = import.meta.env.VITE_ENGINE_API_BASE_URL ?? ''
@@ -168,6 +168,7 @@ export function PreScreen() {
 
   // Express Interest mode (hasCompletedCareerCoach = true)
   const [expressResult,     setExpressResult]     = useState<'accepted' | 'declined' | null>(null)
+  const [searchParams]                            = useSearchParams()
 
   // ── Load token → questions ────────────────────────────────────────────────
   useEffect(() => {
@@ -178,9 +179,19 @@ export function PreScreen() {
         setPayload(data)
         setAnswers(new Array(data.questions.length).fill(''))
         setLoading(false)
+        // Auto-decline if ?decline=true is present in the URL (email link)
+        if (searchParams.get('decline') === 'true' && data.hasCompletedCareerCoach) {
+          // Fire-and-forget submit with 'no'
+          fetch(`${API_BASE}/api/prescreen/${token}/submit`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ responses: [{ question: 'express_interest', answer: 'no' }] }),
+          }).catch(() => { /* ignore errors on auto-decline */ })
+          setExpressResult('declined')
+        }
       })
       .catch(() => { setInvalid(true); setLoading(false) })
-  }, [token])
+  }, [token, searchParams])
 
   // ── Intro → questions fade transition ─────────────────────────────────────
   const handleStart = () => {
@@ -288,9 +299,9 @@ export function PreScreen() {
             <span className="text-green-400"><IconCheckCircle size={44} /></span>
           </div>
           <div className="space-y-3">
-            <h1 className="text-white text-2xl font-bold">Brilliant — you're in the running.</h1>
+            <h1 className="text-white text-2xl font-bold">Your profile has been shared.</h1>
             <p className="text-gray-400 text-sm leading-relaxed max-w-sm mx-auto">
-              We'll be in touch with next steps. In the meantime your profile remains active.
+              The hiring team will be in touch if there's a strong fit.
             </p>
           </div>
           <p className="text-gray-600 text-xs">Powered by Searchline AI</p>
@@ -308,7 +319,7 @@ export function PreScreen() {
             <span className="text-gray-400 text-3xl">👋</span>
           </div>
           <div className="space-y-3">
-            <h1 className="text-white text-2xl font-bold">No problem at all.</h1>
+            <h1 className="text-white text-2xl font-bold">No problem.</h1>
             <p className="text-gray-400 text-sm leading-relaxed max-w-sm mx-auto">
               Your profile stays active and I'll reach out when a better match comes along.
             </p>
@@ -358,6 +369,17 @@ export function PreScreen() {
             </p>
           )}
 
+          {/* Role details card */}
+          {(payload.roleTitle || payload.projectTitle) && (
+            <div className="bg-[#1a3347] border border-[#2a4a5c] rounded-xl p-4 mb-0 w-full">
+              <p className="text-gray-400 text-xs uppercase tracking-wide mb-2">The opportunity</p>
+              <p className="text-white font-semibold text-lg">{payload.roleTitle ?? payload.projectTitle}</p>
+              {payload.companyName && (
+                <p className="text-gray-400 text-sm">{payload.companyName}</p>
+              )}
+            </div>
+          )}
+
           {/* CTA buttons */}
           <div className="w-full flex flex-col gap-3">
             <button
@@ -366,7 +388,7 @@ export function PreScreen() {
               className="w-full py-4 bg-[#FD802E] hover:bg-[#ff8f45] text-white font-bold text-base rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {submitting ? <IconLoaderSm /> : null}
-              Yes, I'm interested →
+              Yes — share my profile with the hiring team →
             </button>
             <button
               onClick={() => handleExpressInterest('no')}
