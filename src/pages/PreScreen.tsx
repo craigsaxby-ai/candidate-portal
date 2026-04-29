@@ -246,6 +246,19 @@ export function PreScreen() {
         return
       }
       setDone(true)
+      // Persist to pre-screen history in localStorage (read by Dashboard)
+      try {
+        const existing = JSON.parse(localStorage.getItem('achievement_record_prescreens') || '[]')
+        existing.push({
+          roleTitle:   payload.roleTitle   || payload.projectTitle || 'Role',
+          companyName: payload.companyName || payload.clientName  || 'Company',
+          completedAt: new Date().toISOString(),
+          status:      'Pre-Screen Complete',
+        })
+        localStorage.setItem('achievement_record_prescreens', JSON.stringify(existing))
+      } catch (lsErr) {
+        console.warn('[prescreen] localStorage write failed:', lsErr)
+      }
     } catch {
       setError('Network error — please check your connection and try again.')
       setSubmitting(false)

@@ -44,6 +44,15 @@ interface Application {
 
 const MOCK_APPLICATIONS: Application[] = []
 
+// ── Pre-screen history (from localStorage) ────────────────────────────────────
+
+interface PreScreenRecord {
+  roleTitle:   string
+  companyName: string
+  completedAt: string
+  status:      string
+}
+
 // ── Status pill config ────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<
@@ -237,14 +246,51 @@ function ApplicationCard({ app }: { app: Application }) {
   )
 }
 
+// ── Pre-screen history card ───────────────────────────────────────────────────
+
+function PreScreenCard({ record }: { record: PreScreenRecord }) {
+  const date = new Date(record.completedAt).toLocaleDateString('en-GB', {
+    day:   'numeric',
+    month: 'short',
+    year:  'numeric',
+  })
+  return (
+    <div className="bg-[#1a3347] rounded-xl p-4 space-y-2.5 border border-[#2a4a5c]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-white font-semibold text-sm truncate">{record.roleTitle}</p>
+          <p className="text-gray-400 text-xs mt-0.5 truncate">{record.companyName}</p>
+        </div>
+        <span className="flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/20 border border-green-500/50 text-green-400">
+          {record.status}
+        </span>
+      </div>
+      <div className="flex items-center gap-4 text-xs text-gray-500">
+        <span>Completed {date}</span>
+      </div>
+    </div>
+  )
+}
+
 // ── Applications section ──────────────────────────────────────────────────────
 
 function ApplicationsSection() {
+  // Read pre-screen history from localStorage (written by PreScreen.tsx on completion)
+  const prescreens: PreScreenRecord[] = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('achievement_record_prescreens') || '[]')
+    } catch {
+      return []
+    }
+  })()
+
+  const hasData = MOCK_APPLICATIONS.length > 0 || prescreens.length > 0
+
   return (
     <div className="space-y-3">
       <h2 className="text-white font-semibold text-base px-1">My Applications</h2>
 
-      {MOCK_APPLICATIONS.length === 0 ? (
+      {!hasData ? (
         // Empty state
         <div className="bg-[#233D4C] rounded-2xl p-8 flex flex-col items-center text-center gap-3">
           <div className="w-12 h-12 rounded-full bg-[#1a3347] flex items-center justify-center">
@@ -277,6 +323,9 @@ function ApplicationsSection() {
         <div className="space-y-3">
           {MOCK_APPLICATIONS.map((app) => (
             <ApplicationCard key={app.id} app={app} />
+          ))}
+          {prescreens.map((record, i) => (
+            <PreScreenCard key={`ps-${i}`} record={record} />
           ))}
         </div>
       )}
