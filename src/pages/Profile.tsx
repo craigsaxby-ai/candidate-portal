@@ -11,13 +11,15 @@
  * No backend calls yet — local state only. Supabase migration pending.
  */
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { EricaCircle } from '../components/EricaCircle'
 import { EricaIntake } from '../components/EricaIntake'
 import type { ParsedProfile } from '../components/EricaIntake'
 import { supabase } from '../lib/supabase'
+import { CVUpload } from '../components/CVUpload'
+import { QualificationsUpload } from '../components/QualificationsUpload'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -37,7 +39,7 @@ const LOOKING_OPTIONS = [
 
 // ── Form state type ───────────────────────────────────────────────────────────
 
-interface ProfileForm {
+export interface ProfileForm {
   fullName:        string
   email:           string
   location:        string
@@ -56,9 +58,11 @@ interface ProfileForm {
   maxSalary:       string
   oteExpectations: string
   skills:          string[]
-  cvFileName:      string
-  qualifications:  string
-  bio:             string
+  cvFileName:        string
+  cvUrl:             string
+  qualifications:    string
+  qualificationUrls: string[]
+  bio:               string
 }
 
 const emptyForm = (fullName = '', email = ''): ProfileForm => ({
@@ -80,9 +84,11 @@ const emptyForm = (fullName = '', email = ''): ProfileForm => ({
   maxSalary:        '',
   oteExpectations:  '',
   skills:           [],
-  cvFileName:       '',
-  qualifications:   '',
-  bio:              '',
+  cvFileName:        '',
+  cvUrl:             '',
+  qualifications:    '',
+  qualificationUrls: [],
+  bio:               '',
 })
 
 // ── Completeness calculation ──────────────────────────────────────────────────
@@ -166,7 +172,6 @@ export function Profile() {
   const [form,         setForm]         = useState<ProfileForm>(emptyForm(fullName, email))
   const [showErica,    setShowErica]    = useState(false)
   const [saved,        setSaved]        = useState(false)
-  const fileInputRef                    = useRef<HTMLInputElement>(null)
 
   // Sync auth metadata into form when user loads
   useEffect(() => {
@@ -211,11 +216,6 @@ export function Profile() {
     }))
   }
 
-  const handleCvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) update('cvFileName', file.name)
-  }
-
   const handleSave = async () => {
     setSaved(true)
     // Persist to Supabase — non-blocking, errors are logged but don't break UX
@@ -243,6 +243,9 @@ export function Profile() {
           skills: form.skills,
           qualifications: form.qualifications,
           is_open_to_opportunities: form.lookingStatus,
+          cv_url: form.cvUrl || null,
+          cv_filename: form.cvFileName || null,
+          qualification_urls: form.qualificationUrls.length > 0 ? form.qualificationUrls : null,
           profile_complete_pct: progress,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id' })
@@ -688,61 +691,24 @@ export function Profile() {
             </div>
           </Section>
 
-          {/* Section 6 — CV & Qualifications */}
-          <Section title="CV & Qualifications">
+          {/* Section 6 — Documents: CV & Qualifications */}
+          <Section title="Documents">
             <div>
-              <label className={labelCls}>Upload CV</label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.docx"
-                className="hidden"
-                onChange={handleCvChange}
+              <label className={labelCls}>CV (PDF or DOCX)</label>
+              <CVUpload
+                existingCvUrl={form.cvUrl || undefined}
+                onParsed={(parsedData) =>
+                  setForm((prev) => ({ ...prev, ...parsedData }))
+                }
               />
-              {form.cvFileName ? (
-                <div className="flex items-center justify-between bg-[#1a3347] border border-[#FD802E]/40 rounded-xl px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#FD802E]">
-                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                    <span className="text-white text-sm">CV uploaded: {form.cvFileName}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => { update('cvFileName', ''); if (fileInputRef.current) fileInputRef.current.value = '' }}
-                    className="text-gray-500 hover:text-white text-xs transition-colors"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full border-2 border-dashed border-[#2a4a5c] hover:border-[#FD802E]/50 rounded-xl px-4 py-6 text-center transition-colors group"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500 group-hover:text-[#FD802E] mx-auto mb-2 transition-colors">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
-                  </svg>
-                  <p className="text-gray-400 text-sm group-hover:text-white transition-colors">
-                    Click to upload your CV
-                  </p>
-                  <p className="text-gray-600 text-xs mt-0.5">PDF or DOCX</p>
-                </button>
-              )}
             </div>
 
             <div>
-              <label className={labelCls}>Qualifications</label>
-              <textarea
-                rows={3}
-                className={`${inputCls} resize-none`}
-                value={form.qualifications}
-                onChange={(e) => update('qualifications', e.target.value)}
-                placeholder="MBA, Certified Sales Leader, etc."
+              <label className={labelCls}>Qualification Documents</label>
+              <p className="text-gray-500 text-xs mb-2">Upload certificates, diplomas, or other credentials (up to 5 files).</p>
+              <QualificationsUpload
+                existingUrls={form.qualificationUrls}
+                onChange={(urls) => update('qualificationUrls', urls)}
               />
             </div>
 
