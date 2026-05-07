@@ -23,11 +23,34 @@ import { QualificationsUpload } from '../components/QualificationsUpload'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const TARGET_ROLE_OPTIONS = ['VP Sales', 'CRO', 'CCO', 'Sales Director', 'Head of Sales']
+const TARGET_ROLE_OPTIONS = [
+  // Sales & Revenue
+  'VP Sales', 'CRO', 'CCO', 'Sales Director', 'Head of Sales',
+  // Engineering
+  'CTO', 'VP Engineering', 'Head of Engineering', 'Engineering Manager',
+  // Product
+  'CPO', 'VP Product', 'Head of Product', 'Product Director',
+  // Marketing
+  'CMO', 'VP Marketing', 'Head of Marketing', 'Growth Director',
+  // Operations
+  'COO', 'VP Operations', 'Head of Operations',
+  // Finance
+  'CFO', 'VP Finance', 'Head of Finance',
+]
 const SKILL_OPTIONS = [
-  'ARR Growth', 'Team Building', 'PLG', 'Outbound Sales', 'MEDDIC', 'MEDDPICC',
-  'Channel Sales', 'Enterprise Sales', 'SMB Sales', 'Revenue Operations',
-  'Forecasting', 'CRM Management', 'Hiring & Scaling', 'Board Presentations', 'P&L Ownership',
+  // Leadership & Strategy
+  'Team Building', 'Hiring & Scaling', 'P&L Ownership', 'Board Presentations', 'Fundraising',
+  // Engineering
+  'Software Architecture', 'Technical Leadership', 'DevOps', 'Security', 'Data Engineering',
+  // Product
+  'Product Strategy', 'Roadmap Planning', 'User Research', 'Agile / Scrum', 'OKRs',
+  // Marketing & Growth
+  'B2B Marketing', 'Demand Generation', 'Content Marketing', 'SEO / SEM', 'Brand Strategy', 'PLG',
+  // Sales & Revenue
+  'ARR Growth', 'Outbound Sales', 'MEDDIC', 'MEDDPICC', 'Channel Sales', 'Enterprise Sales',
+  'SMB Sales', 'Revenue Operations', 'Forecasting', 'CRM Management',
+  // Operations & Finance
+  'Financial Modelling', 'M&A', 'Operations Management', 'Process Optimisation',
 ]
 const YEARS_OPTIONS   = ['1-3', '3-5', '5-10', '10-15', '15+']
 const NOTICE_OPTIONS  = ['Immediate', '1 month', '3 months', 'Negotiable']
@@ -169,19 +192,65 @@ export function Profile() {
   const fullName = (user?.user_metadata?.full_name as string | undefined) ?? ''
   const email    = user?.email ?? ''
 
-  const [form,         setForm]         = useState<ProfileForm>(emptyForm(fullName, email))
-  const [showErica,    setShowErica]    = useState(false)
-  const [saved,        setSaved]        = useState(false)
+  const [form,           setForm]           = useState<ProfileForm>(emptyForm(fullName, email))
+  const [showErica,      setShowErica]      = useState(false)
+  const [saved,          setSaved]          = useState(false)
+  const [profileLoading, setProfileLoading] = useState(false)
 
-  // Sync auth metadata into form when user loads
+  // Load saved profile from Supabase on mount
   useEffect(() => {
-    if (user) {
-      setForm((prev) => ({
-        ...prev,
-        fullName: prev.fullName || fullName,
-        email:    email,
-      }))
+    if (!user) return
+    const loadProfile = async () => {
+      setProfileLoading(true)
+      try {
+        const { data, error } = await supabase
+          .from('candidate_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle()
+        if (error) {
+          console.error('[profile] Load error:', error)
+          // Fall back to empty form seeded with auth metadata
+          setForm(emptyForm(fullName, email))
+        } else if (data) {
+          setForm({
+            fullName:          data.full_name          ?? fullName,
+            email:             data.email              ?? email,
+            location:          data.location           ?? '',
+            openToRelocation:  data.open_to_relocation ?? false,
+            linkedIn:          data.linkedin_url       ?? '',
+            currentRole:       data.job_title          ?? '',
+            currentCompany:    data.company_name       ?? '',
+            yearsExperience:   data.years_experience   ?? '',
+            currentSalary:     data.current_salary     ?? '',
+            currentPackage:    data.current_package    ?? '',
+            noticePeriod:      data.notice_period      ?? '',
+            targetRoles:       data.target_roles       ?? [],
+            idealNextRole:     data.ideal_next_role    ?? '',
+            lookingStatus:     data.is_open_to_opportunities ?? '',
+            minSalary:         data.salary_min         ?? '',
+            maxSalary:         data.salary_max         ?? '',
+            oteExpectations:   data.ote_expectations   ?? '',
+            skills:            data.skills             ?? [],
+            cvFileName:        data.cv_filename        ?? '',
+            cvUrl:             data.cv_url             ?? '',
+            qualifications:    data.qualifications     ?? '',
+            qualificationUrls: data.qualification_urls ?? [],
+            bio:               data.bio                ?? '',
+          })
+          console.log('[profile] Profile loaded from Supabase')
+        } else {
+          // No saved profile yet — seed with auth metadata only
+          setForm(emptyForm(fullName, email))
+        }
+      } catch (err) {
+        console.error('[profile] Load exception:', err)
+        setForm(emptyForm(fullName, email))
+      } finally {
+        setProfileLoading(false)
+      }
     }
+    loadProfile()
   }, [user])
 
   const progress = computeProgress(form)
@@ -257,8 +326,8 @@ export function Profile() {
     }
   }
 
-  // ── Auth loading ─────────────────────────────────────────────────────────
-  if (authLoading) {
+  // ── Auth / profile loading ───────────────────────────────────────────────
+  if (authLoading || profileLoading) {
     return (
       <div className="min-h-screen bg-[#02182B] flex items-center justify-center">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#FD802E] animate-spin">
